@@ -5,177 +5,187 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#064e3b">
+  <title>QamarulArif Admin Login</title>
 
-  <title>QamarulArif | Mosque Digital Display</title>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
 
   <style>
-    :root {
-      --emerald: #064e3b;
-      --deep: #022c22;
-      --champagne: #e6c98b;
-      --cream: #f8f6ef;
-      --white: #ffffff;
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+    * { box-sizing: border-box; }
 
     body {
+      margin: 0;
       min-height: 100vh;
-      font-family: Arial, sans-serif;
-      background:
-        radial-gradient(circle at top right, #17664d, transparent 45%),
-        linear-gradient(135deg, var(--deep), var(--emerald));
-      color: var(--white);
-      display: flex;
-      align-items: center;
-      justify-content: center;
       padding: 24px;
+      display: grid;
+      place-items: center;
+      font-family: Arial, sans-serif;
+      color: white;
+      background: linear-gradient(140deg, #022c22, #064e3b, #105c45);
     }
 
-    .container {
+    .card {
       width: 100%;
-      max-width: 760px;
+      max-width: 440px;
+      padding: 38px 28px;
       text-align: center;
+      border: 1px solid rgba(230,201,139,.4);
+      border-radius: 22px;
+      background: rgba(255,255,255,.06);
+      box-shadow: 0 20px 60px rgba(0,0,0,.2);
     }
 
     .logo {
-      width: 82px;
-      height: 82px;
-      border: 2px solid var(--champagne);
-      border-radius: 50%;
+      width: 68px;
+      height: 68px;
       display: grid;
       place-items: center;
-      margin: 0 auto 24px;
-      color: var(--champagne);
+      margin: 0 auto 20px;
+      border: 2px solid #e6c98b;
+      border-radius: 50%;
+      color: #e6c98b;
       font-size: 30px;
-      font-weight: bold;
-    }
-
-    .eyebrow {
-      color: var(--champagne);
-      font-size: 12px;
-      letter-spacing: 4px;
-      text-transform: uppercase;
-      margin-bottom: 16px;
     }
 
     h1 {
-      font-family: Georgia, serif;
-      font-size: clamp(36px, 7vw, 58px);
-      font-weight: normal;
-      margin-bottom: 14px;
+      margin: 10px 0;
+      font: normal 38px Georgia, serif;
     }
 
     .subtitle {
       color: #d7e9df;
-      font-size: 15px;
-      line-height: 1.8;
-    }
-
-    .clock {
-      margin: 38px 0 12px;
-      color: var(--champagne);
-      font-size: clamp(38px, 8vw, 58px);
-      font-weight: 300;
-      font-variant-numeric: tabular-nums;
-    }
-
-    .date {
-      color: #d7e9df;
       font-size: 14px;
+      line-height: 1.7;
     }
 
-    .status {
-      display: inline-flex;
-      align-items: center;
-      gap: 9px;
-      margin-top: 38px;
-      padding: 12px 20px;
-      border: 1px solid rgba(230, 201, 139, .5);
-      border-radius: 30px;
-      color: var(--champagne);
+    .login {
+      margin: 30px auto 18px;
+      display: flex;
+      justify-content: center;
+    }
+
+    #result {
+      display: none;
+      margin-top: 22px;
+      padding: 16px;
+      border-radius: 12px;
+      background: rgba(0,0,0,.2);
+      text-align: left;
+      overflow-wrap: anywhere;
       font-size: 13px;
+      line-height: 1.7;
     }
 
-    .dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: #72d6a2;
+    .note {
+      color: #e6c98b;
+      font-size: 12px;
+      line-height: 1.6;
+      margin-top: 24px;
     }
 
     footer {
-      margin-top: 65px;
+      margin-top: 30px;
       color: #b7d0c4;
-      font-size: 11px;
+      font-size: 10px;
       letter-spacing: 1px;
-    }
-
-    @media (max-width: 480px) {
-      body { padding: 20px; }
-      footer { margin-top: 48px; }
     }
   </style>
 </head>
 
 <body>
-  <main class="container">
+  <main class="card">
     <div class="logo">ق</div>
-
-    <p class="eyebrow">Mosque Management System</p>
 
     <h1>QamarulArif</h1>
 
     <p class="subtitle">
-      Mosque Digital Display & Administration Portal
-      <br>
-      Matsirat, Langkawi, Kedah
+      Mosque Digital Display<br>
+      Administration Portal
     </p>
 
-    <div class="clock" id="clock">00:00:00</div>
-    <div class="date" id="date"></div>
+    <div class="login">
+      <div id="g_id_onload"
+        data-client_id="132233719668-h82suq66l3bsfa3dik3slp90hp978803.apps.googleusercontent.com"
+        data-callback="handleGoogleLogin"
+        data-auto_prompt="false">
+      </div>
 
-    <div class="status">
-      <span class="dot"></span>
-      GitHub Pages Successfully Connected
+      <div class="g_id_signin"
+        data-type="standard"
+        data-size="large"
+        data-theme="outline"
+        data-text="continue_with"
+        data-shape="rectangular"
+        data-logo_alignment="left">
+      </div>
     </div>
 
+    <div id="result"></div>
+
+    <p class="note">
+      Secure Google Identity Verification<br>
+      Application access is subject to administrator approval.
+    </p>
+
     <footer>
-      QAMARULARIF MOSQUE DIGITAL DISPLAY
-      <br><br>
-      VERSION 1.0.0
+      QAMARULARIF MOSQUE DIGITAL DISPLAY<br><br>
+      VERSION 1.1.0
     </footer>
   </main>
 
   <script>
-    function updateClock() {
-      const now = new Date();
+    const API_URL =
+      "https://qamarularif-api.cloudsaas8.workers.dev";
 
-      document.getElementById("clock").textContent =
-        new Intl.DateTimeFormat("en-GB", {
-          timeZone: "Asia/Kuala_Lumpur",
-          hour: "2-digit",
-          minute: "2-digit",
-          second: "2-digit",
-          hour12: false
-        }).format(now);
+    async function handleGoogleLogin(response) {
+      const result = document.getElementById("result");
 
-      document.getElementById("date").textContent =
-        new Intl.DateTimeFormat("en-MY", {
-          timeZone: "Asia/Kuala_Lumpur",
-          weekday: "long",
-          day: "numeric",
-          month: "long",
-          year: "numeric"
-        }).format(now);
+      result.style.display = "block";
+      result.textContent = "Verifying Google identity...";
+
+      try {
+        const apiResponse = await fetch(
+          API_URL + "/auth/google",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              credential: response.credential
+            })
+          }
+        );
+
+        const data = await apiResponse.json();
+
+        if (!apiResponse.ok || !data.success) {
+          throw new Error(
+            data.error || "Google verification failed."
+          );
+        }
+
+        result.innerHTML = "";
+
+        const heading = document.createElement("strong");
+        heading.textContent = "Google identity verified";
+
+        const name = document.createElement("div");
+        name.textContent = "Name: " + data.user.name;
+
+        const email = document.createElement("div");
+        email.textContent = "Email: " + data.user.email;
+
+        const status = document.createElement("div");
+        status.textContent =
+          "Application access: Pending role verification";
+
+        result.append(heading, name, email, status);
+
+      } catch (error) {
+        result.textContent =
+          "Verification failed: " + error.message;
+      }
     }
-
-    updateClock();
-    setInterval(updateClock, 1000);
   </script>
 </body>
 </html>
