@@ -5,12 +5,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#064e3b">
-  <title>QamarulArif Admin Login</title>
+
+  <title>QamarulArif Admin Portal</title>
 
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 
   <style>
-    * { box-sizing: border-box; }
+    * {
+      box-sizing: border-box;
+    }
 
     body {
       margin: 0;
@@ -20,7 +23,12 @@
       place-items: center;
       font-family: Arial, sans-serif;
       color: white;
-      background: linear-gradient(140deg, #022c22, #064e3b, #105c45);
+      background: linear-gradient(
+        140deg,
+        #022c22,
+        #064e3b,
+        #105c45
+      );
     }
 
     .card {
@@ -61,6 +69,7 @@
       margin: 30px auto 18px;
       display: flex;
       justify-content: center;
+      min-height: 42px;
     }
 
     #result {
@@ -72,7 +81,36 @@
       text-align: left;
       overflow-wrap: anywhere;
       font-size: 13px;
-      line-height: 1.7;
+      line-height: 1.8;
+    }
+
+    #result.success {
+      border: 1px solid rgba(134,239,172,.5);
+    }
+
+    #result.error {
+      border: 1px solid rgba(252,165,165,.5);
+    }
+
+    #result.loading {
+      border: 1px solid rgba(230,201,139,.4);
+    }
+
+    .result-heading {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+
+    .role {
+      display: inline-block;
+      margin-top: 8px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      background: rgba(230,201,139,.15);
+      color: #e6c98b;
+      font-weight: bold;
+      letter-spacing: .5px;
     }
 
     .note {
@@ -87,12 +125,29 @@
       color: #b7d0c4;
       font-size: 10px;
       letter-spacing: 1px;
+      line-height: 1.8;
+    }
+
+    @media (max-width: 480px) {
+      body {
+        padding: 16px;
+      }
+
+      .card {
+        padding: 32px 20px;
+      }
+
+      h1 {
+        font-size: 34px;
+      }
     }
   </style>
 </head>
 
 <body>
+
   <main class="card">
+
     <div class="logo">ق</div>
 
     <h1>QamarulArif</h1>
@@ -103,6 +158,7 @@
     </p>
 
     <div class="login">
+
       <div id="g_id_onload"
         data-client_id="132233719668-h82suq66l3bsfa3dik3slp90hp978803.apps.googleusercontent.com"
         data-callback="handleGoogleLogin"
@@ -117,9 +173,10 @@
         data-shape="rectangular"
         data-logo_alignment="left">
       </div>
+
     </div>
 
-    <div id="result"></div>
+    <div id="result" role="status" aria-live="polite"></div>
 
     <p class="note">
       Secure Google Identity Verification<br>
@@ -128,21 +185,120 @@
 
     <footer>
       QAMARULARIF MOSQUE DIGITAL DISPLAY<br><br>
-      VERSION 1.1.0
+      VERSION 1.2.0
     </footer>
+
   </main>
 
   <script>
+
     const API_URL =
       "https://qamarularif-api.cloudsaas8.workers.dev";
 
-    async function handleGoogleLogin(response) {
-      const result = document.getElementById("result");
+    const resultBox = document.getElementById("result");
 
-      result.style.display = "block";
-      result.textContent = "Verifying Google identity...";
+    function showMessage(message, type) {
+      resultBox.style.display = "block";
+      resultBox.className = type;
+      resultBox.textContent = message;
+    }
+
+    function showAuthorizedUser(user) {
+
+      resultBox.innerHTML = "";
+
+      const heading = document.createElement("strong");
+      heading.className = "result-heading";
+      heading.textContent = "Access Granted";
+
+      const name = document.createElement("div");
+      name.textContent = "Name: " + (user.name || "-");
+
+      const email = document.createElement("div");
+      email.textContent = "Email: " + (user.email || "-");
+
+      const roleLabel = document.createElement("div");
+      roleLabel.textContent = "Assigned Role:";
+
+      const role = document.createElement("span");
+      role.className = "role";
+      role.textContent = user.role || "UNKNOWN";
+
+      const mosque = document.createElement("div");
+      mosque.textContent =
+        "Mosque ID: " + (user.mosqueId || "-");
+
+      const message = document.createElement("div");
+      message.style.marginTop = "10px";
+      message.textContent =
+        "Google identity and account authorization verified successfully.";
+
+      resultBox.append(
+        heading,
+        name,
+        email,
+        roleLabel,
+        role,
+        mosque,
+        message
+      );
+
+      resultBox.style.display = "block";
+      resultBox.className = "success";
+    }
+
+    function getErrorMessage(errorCode) {
+
+      const messages = {
+        USER_NOT_AUTHORIZED:
+          "Your Google account is not registered in the mosque system.",
+
+        USER_NOT_REGISTERED:
+          "Your account has not been registered by the administrator.",
+
+        INVALID_USER_ROLE:
+          "Your account has an invalid role. Please contact the administrator.",
+
+        DUPLICATE_ACTIVE_USER_RECORDS:
+          "Duplicate active user records detected. Please contact the administrator.",
+
+        REQUEST_EXPIRED:
+          "The authentication request has expired. Please try again.",
+
+        INVALID_SIGNATURE:
+          "Backend security verification failed.",
+
+        REPLAYED_REQUEST:
+          "This authentication request has already been used.",
+
+        AUTHENTICATION_SERVICE_ERROR:
+          "Authentication service is temporarily unavailable.",
+
+        BACKEND_AUTH_FAILED:
+          "The backend could not authorize your account."
+      };
+
+      return messages[errorCode] ||
+        "Login could not be completed. Please try again.";
+    }
+
+    async function handleGoogleLogin(response) {
+
+      if (!response || !response.credential) {
+        showMessage(
+          "Google did not return a valid login credential.",
+          "error"
+        );
+        return;
+      }
+
+      showMessage(
+        "Google identity verified. Checking account permissions...",
+        "loading"
+      );
 
       try {
+
         const apiResponse = await fetch(
           API_URL + "/auth/google",
           {
@@ -156,36 +312,46 @@
           }
         );
 
-        const data = await apiResponse.json();
+        let data;
 
-        if (!apiResponse.ok || !data.success) {
+        try {
+          data = await apiResponse.json();
+        } catch {
+          throw new Error("INVALID_SERVER_RESPONSE");
+        }
+
+        if (
+          !apiResponse.ok ||
+          !data.success ||
+          !data.authorized ||
+          !data.user
+        ) {
           throw new Error(
-            data.error || "Google verification failed."
+            data.error || "BACKEND_AUTH_FAILED"
           );
         }
 
-        result.innerHTML = "";
-
-        const heading = document.createElement("strong");
-        heading.textContent = "Google identity verified";
-
-        const name = document.createElement("div");
-        name.textContent = "Name: " + data.user.name;
-
-        const email = document.createElement("div");
-        email.textContent = "Email: " + data.user.email;
-
-        const status = document.createElement("div");
-        status.textContent =
-          "Application access: Pending role verification";
-
-        result.append(heading, name, email, status);
+        showAuthorizedUser(data.user);
 
       } catch (error) {
-        result.textContent =
-          "Verification failed: " + error.message;
+
+        console.error("Login error:", error);
+
+        const message =
+          error.message === "Failed to fetch"
+            ? "Cannot connect to the authentication server. Please check the API and CORS configuration."
+            : getErrorMessage(error.message);
+
+        showMessage(
+          "Access Denied: " + message,
+          "error"
+        );
       }
     }
+
+    window.handleGoogleLogin = handleGoogleLogin;
+
   </script>
+
 </body>
 </html>
