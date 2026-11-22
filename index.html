@@ -648,6 +648,59 @@ button { font: inherit; cursor: pointer; }
 @media(max-width:380px) {
   .stats { grid-template-columns: 1fr; }
 }
+
+
+/* =====================================================
+   BLACK THEME - LOCAL DISPLAY PREFERENCE
+   Does not modify Google Sheets or backend settings.
+===================================================== */
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --cream: #090d0b;
+  --white: #111815;
+  --text: #e6eee9;
+  --muted: #9aa9a0;
+  --border: #29352e;
+  --shadow: 0 8px 28px rgba(0,0,0,.28);
+  --green: #72c6a2;
+  --green-dark: #050907;
+  --green-light: #42a985;
+}
+
+html[data-theme="dark"] body { background:#090d0b; color:#e6eee9; }
+html[data-theme="dark"] .topbar,
+html[data-theme="dark"] .stat-card,
+html[data-theme="dark"] .panel { background:#111815; border-color:#29352e; color:#e6eee9; }
+html[data-theme="dark"] .top-title,
+html[data-theme="dark"] .welcome h2,
+html[data-theme="dark"] .panel-heading h3,
+html[data-theme="dark"] .stat-number { color:#9ad9ba; }
+html[data-theme="dark"] .btn-outline,
+html[data-theme="dark"] .user-row-action { background:#18221c; border-color:#35443a; color:#e6eee9; }
+html[data-theme="dark"] .user-avatar,
+html[data-theme="dark"] .stat-icon { background:#20372b; color:#a8e0bf; }
+html[data-theme="dark"] .settings-field input,
+html[data-theme="dark"] .settings-field select,
+html[data-theme="dark"] .user-form-grid input,
+html[data-theme="dark"] .user-form-grid select,
+html[data-theme="dark"] .user-form-grid textarea { background:#0c120f; color:#e6eee9; border-color:#35443a; }
+html[data-theme="dark"] .settings-field input:disabled,
+html[data-theme="dark"] .settings-field select:disabled { background:#202923; color:#9aa9a0; }
+html[data-theme="dark"] .settings-intro { background:#282316; border-color:#51452a; color:#e5d3a5; }
+html[data-theme="dark"] .notice,
+html[data-theme="dark"] .page-message { background:#282316; border-color:#51452a; color:#e5d3a5; }
+html[data-theme="dark"] .status { background:#20372b; color:#a8e0bf; }
+html[data-theme="dark"] .status.offline { background:#382323; color:#f0aaaa; }
+html[data-theme="dark"] .status.unknown { background:#3a321e; color:#e5d3a5; }
+html[data-theme="dark"] .user-status { background:#20372b; color:#a8e0bf; }
+html[data-theme="dark"] .user-status.inactive { background:#302d27; color:#c4b9a5; }
+html[data-theme="dark"] .settings-result.success { background:#172c20; color:#a8e0bf; border-color:#315b3d; }
+html[data-theme="dark"] .settings-result.error { background:#321c1b; color:#f0aaa5; border-color:#63302c; }
+html[data-theme="dark"] .login-screen { background:linear-gradient(140deg,#020403,#07110c,#10251a); }
+html[data-theme="dark"] .login-card { background:rgba(12,20,15,.82); border-color:rgba(230,201,139,.45); }
+html[data-theme="dark"] .mobile-menu { color:#9ad9ba; }
+html[data-theme="dark"] .footer { border-color:#29352e; }
+
 </style>
 </head>
 
@@ -800,6 +853,8 @@ button { font: inherit; cursor: pointer; }
       </div>
 
       <div class="top-actions">
+
+        <button class="btn btn-outline" id="themeToggle" type="button" aria-label="Switch to black theme" aria-pressed="false">☾ Black</button>
 
         <button class="btn btn-outline" id="languageToggle">
           BM
@@ -2342,6 +2397,40 @@ document.getElementById("mobileMenu")
 
   });
 
+
+/* =====================================================
+   BLACK THEME TOGGLE
+   Saved locally in this browser only.
+===================================================== */
+
+function applyPortalTheme(theme) {
+  const isDark = theme === "dark";
+  document.documentElement.setAttribute("data-theme", isDark ? "dark" : "light");
+  const button = document.getElementById("themeToggle");
+  if (button) {
+    button.textContent = isDark ? "☀ Light" : "☾ Black";
+    button.setAttribute("aria-pressed", isDark ? "true" : "false");
+    button.setAttribute("aria-label", isDark ? "Switch to light theme" : "Switch to black theme");
+  }
+  const themeColor = document.querySelector('meta[name="theme-color"]');
+  if (themeColor) themeColor.setAttribute("content", isDark ? "#090d0b" : "#064e3b");
+}
+
+function togglePortalTheme() {
+  const current = document.documentElement.getAttribute("data-theme") || "light";
+  const next = current === "dark" ? "light" : "dark";
+  try { localStorage.setItem("QAMARULARIF_PORTAL_THEME", next); } catch (error) { /* storage may be unavailable */ }
+  applyPortalTheme(next);
+}
+
+(function initializePortalTheme() {
+  let savedTheme = "light";
+  try { savedTheme = localStorage.getItem("QAMARULARIF_PORTAL_THEME") || "light"; } catch (error) { /* use default */ }
+  applyPortalTheme(savedTheme === "dark" ? "dark" : "light");
+})();
+
+const themeToggleButton = document.getElementById("themeToggle");
+if (themeToggleButton) themeToggleButton.addEventListener("click", togglePortalTheme);
 
 /* =====================================================
    INITIALIZE
