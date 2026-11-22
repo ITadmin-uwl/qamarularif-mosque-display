@@ -1,0 +1,181 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#064e3b">
+
+  <title>QamarulArif | Mosque Digital Display</title>
+
+  <style>
+    :root {
+      --emerald: #064e3b;
+      --deep: #022c22;
+      --champagne: #e6c98b;
+      --cream: #f8f6ef;
+      --white: #ffffff;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      font-family: Arial, sans-serif;
+      background:
+        radial-gradient(circle at top right, #17664d, transparent 45%),
+        linear-gradient(135deg, var(--deep), var(--emerald));
+      color: var(--white);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 760px;
+      text-align: center;
+    }
+
+    .logo {
+      width: 82px;
+      height: 82px;
+      border: 2px solid var(--champagne);
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      margin: 0 auto 24px;
+      color: var(--champagne);
+      font-size: 30px;
+      font-weight: bold;
+    }
+
+    .eyebrow {
+      color: var(--champagne);
+      font-size: 12px;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    h1 {
+      font-family: Georgia, serif;
+      font-size: clamp(36px, 7vw, 58px);
+      font-weight: normal;
+      margin-bottom: 14px;
+    }
+
+    .subtitle {
+      color: #d7e9df;
+      font-size: 15px;
+      line-height: 1.8;
+    }
+
+    .clock {
+      margin: 38px 0 12px;
+      color: var(--champagne);
+      font-size: clamp(38px, 8vw, 58px);
+      font-weight: 300;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .date {
+      color: #d7e9df;
+      font-size: 14px;
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      margin-top: 38px;
+      padding: 12px 20px;
+      border: 1px solid rgba(230, 201, 139, .5);
+      border-radius: 30px;
+      color: var(--champagne);
+      font-size: 13px;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #72d6a2;
+    }
+
+    footer {
+      margin-top: 65px;
+      color: #b7d0c4;
+      font-size: 11px;
+      letter-spacing: 1px;
+    }
+
+    @media (max-width: 480px) {
+      body { padding: 20px; }
+      footer { margin-top: 48px; }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="container">
+    <div class="logo">ق</div>
+
+    <p class="eyebrow">Mosque Management System</p>
+
+    <h1>QamarulArif</h1>
+
+    <p class="subtitle">
+      Mosque Digital Display & Administration Portal
+      <br>
+      Matsirat, Langkawi, Kedah
+    </p>
+
+    <div class="clock" id="clock">00:00:00</div>
+    <div class="date" id="date"></div>
+
+    <div class="status">
+      <span class="dot"></span>
+      GitHub Pages Successfully Connected
+    </div>
+
+    <footer>
+      QAMARULARIF MOSQUE DIGITAL DISPLAY
+      <br><br>
+      VERSION 1.0.0
+    </footer>
+  </main>
+
+  <script>
+    function updateClock() {
+      const now = new Date();
+
+      document.getElementById("clock").textContent =
+        new Intl.DateTimeFormat("en-GB", {
+          timeZone: "Asia/Kuala_Lumpur",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          hour12: false
+        }).format(now);
+
+      document.getElementById("date").textContent =
+        new Intl.DateTimeFormat("en-MY", {
+          timeZone: "Asia/Kuala_Lumpur",
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+          year: "numeric"
+        }).format(now);
+    }
+
+    updateClock();
+    setInterval(updateClock, 1000);
+  </script>
+</body>
+</html>
