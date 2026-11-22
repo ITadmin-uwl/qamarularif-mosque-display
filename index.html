@@ -567,6 +567,23 @@ button { font: inherit; cursor: pointer; }
   .settings-actions .btn { flex: 1; }
 }
 
+
+/* USER MANAGEMENT */
+.users-view { display:none; }
+.users-view.active { display:block; }
+.users-toolbar { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:16px; }
+.users-table-wrap { width:100%; overflow-x:auto; }
+.users-table { width:100%; border-collapse:collapse; min-width:680px; font-size:12px; }
+.users-table th,.users-table td { padding:12px 10px; border-bottom:1px solid var(--border); text-align:left; vertical-align:middle; }
+.users-table th { color:var(--muted); font-size:10px; text-transform:uppercase; letter-spacing:.05em; }
+.user-status { display:inline-flex; padding:5px 9px; border-radius:20px; font-size:10px; font-weight:700; background:#edf7ef; color:#23613a; }
+.user-status.inactive { background:#f3f1ec; color:#766b58; }
+.user-form-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
+.user-form-grid .settings-field.full { grid-column:1/-1; }
+.user-row-action { border:1px solid var(--border); border-radius:8px; padding:7px 10px; background:#fff; color:var(--text); cursor:pointer; font:inherit; }
+.users-empty { padding:22px; text-align:center; color:var(--muted); font-size:12px; }
+@media(max-width:600px){ .user-form-grid{grid-template-columns:1fr}.user-form-grid .settings-field.full{grid-column:auto}.users-toolbar .btn{width:100%} }
+
 /* MOBILE */
 
 .mobile-menu {
@@ -687,7 +704,7 @@ button { font: inherit; cursor: pointer; }
 
     <footer class="login-footer">
       QAMARULARIF MOSQUE DIGITAL DISPLAY<br><br>
-      VERSION 1.4.0
+      VERSION 1.5.0
     </footer>
 
   </main>
@@ -765,7 +782,7 @@ button { font: inherit; cursor: pointer; }
     <div class="sidebar-bottom">
       <div>QamarulArif</div>
       <div data-i18n="adminPortal">Administration Portal</div>
-      <div>Version 1.4.0</div>
+      <div>Version 1.5.0</div>
     </div>
 
   </aside>
@@ -806,6 +823,51 @@ button { font: inherit; cursor: pointer; }
     <section class="content">
 
       <div id="pageMessage" class="page-message"></div>
+
+      <!-- USER MANAGEMENT VIEW -->
+      <section class="users-view" id="usersManagementView">
+        <div class="panel">
+          <div class="panel-heading">
+            <div>
+              <h3 data-i18n="users">Users &amp; Roles</h3>
+              <div class="panel-subtitle" id="usersSubtitle">Manage authorized administrators for this mosque</div>
+            </div>
+            <span class="status">SUPER_ADMIN</span>
+          </div>
+          <div class="settings-intro" id="usersSecurityNote">Only SUPER_ADMIN can manage accounts. Changes are saved to the existing Users_Roles sheet. Accounts are deactivated, not deleted.</div>
+          <div class="users-toolbar">
+            <div class="settings-help" id="usersCount">No users loaded.</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button type="button" class="btn btn-outline" id="refreshUsersButton">↻ Refresh</button>
+              <button type="button" class="btn btn-primary" id="newUserButton">＋ Add User</button>
+            </div>
+          </div>
+          <div class="users-table-wrap">
+            <table class="users-table">
+              <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Last Login</th><th>Action</th></tr></thead>
+              <tbody id="usersTableBody"><tr><td colspan="6" class="users-empty">Select Users &amp; Roles to load accounts.</td></tr></tbody>
+            </table>
+          </div>
+          <div class="settings-result" id="usersResult" role="status" aria-live="polite"></div>
+        </div>
+
+        <div class="panel" id="userEditorPanel" style="margin-top:18px;display:none">
+          <div class="panel-heading"><div><h3 id="userEditorTitle">Add User</h3><div class="panel-subtitle" id="userEditorSubtitle">Create an authorized portal account</div></div></div>
+          <form id="userEditorForm">
+            <input type="hidden" id="managedUserId">
+            <div class="user-form-grid">
+              <div class="settings-field"><label for="managedUserName">Full Name</label><input id="managedUserName" type="text" maxlength="150" required></div>
+              <div class="settings-field"><label for="managedUserEmail">Google Account Email</label><input id="managedUserEmail" type="email" maxlength="254" required></div>
+              <div class="settings-field"><label for="managedUserRole">User Role</label><select id="managedUserRole"><option value="CONTENT_ADMIN">CONTENT_ADMIN</option><option value="VIEWER">VIEWER</option><option value="SUPER_ADMIN">SUPER_ADMIN</option></select></div>
+              <div class="settings-field"><label for="managedUserActive">Account Status</label><select id="managedUserActive"><option value="true">Active</option><option value="false">Inactive</option></select></div>
+            </div>
+            <div class="settings-actions">
+              <button type="button" class="btn btn-outline" id="cancelUserEdit">Cancel</button>
+              <button type="submit" class="btn btn-primary" id="saveManagedUser">Save User</button>
+            </div>
+          </form>
+        </div>
+      </section>
 
       <!-- MOSQUE SETTINGS VIEW -->
       <section class="settings-view" id="mosqueSettingsView">
@@ -1095,6 +1157,7 @@ let googleCredential = null;
 let currentUser = null;
 let dashboardData = null;
 let currentLanguage = "EN";
+let managedUsers = [];
 
 
 /* =====================================================
@@ -1947,7 +2010,159 @@ async function saveMosqueSettings(event) {
   }
 }
 
+
+/* =====================================================
+   USER MANAGEMENT
+===================================================== */
+
+function userText(en, bm) { return currentLanguage === "BM" ? bm : en; }
+
+function escapeHtml(value) {
+  return String(value == null ? "" : value).replace(/[&<>\"']/g, ch => ({
+    "&":"&amp;", "<":"&lt;", ">":"&gt;", '\"':"&quot;", "'":"&#39;"
+  })[ch]);
+}
+
+function showUsersResult(message, type) {
+  const box = document.getElementById("usersResult");
+  box.textContent = message;
+  box.className = "settings-result " + (type || "success");
+}
+
+async function requestUsersApi(action, user) {
+  if (!googleCredential) throw new Error("GOOGLE_SESSION_EXPIRED");
+  const endpoints = { USERS_LIST:"/api/users/list", USERS_CREATE:"/api/users/create", USERS_UPDATE:"/api/users/update" };
+  const body = { credential: googleCredential };
+  if (user) body.user = user;
+  const response = await fetch(API_URL + endpoints[action], {
+    method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body)
+  });
+  let result;
+  try { result = await response.json(); } catch (e) { throw new Error("INVALID_SERVER_RESPONSE"); }
+  if (!response.ok || !result || result.success !== true) throw new Error((result && result.error) || "USER_MANAGEMENT_REQUEST_FAILED");
+  return result;
+}
+
+function formatUserDate(value) {
+  if (!value) return "—";
+  const d = new Date(value);
+  return isNaN(d.getTime()) ? String(value) : d.toLocaleString(currentLanguage === "BM" ? "ms-MY" : "en-GB", { dateStyle:"medium", timeStyle:"short" });
+}
+
+function renderManagedUsers() {
+  const tbody = document.getElementById("usersTableBody");
+  document.getElementById("usersCount").textContent = userText(managedUsers.length + " account(s) registered", managedUsers.length + " akaun didaftarkan");
+  if (!managedUsers.length) {
+    tbody.innerHTML = '<tr><td colspan="6" class="users-empty">' + userText("No users found for this mosque.", "Tiada pengguna untuk masjid ini.") + '</td></tr>';
+    return;
+  }
+  tbody.innerHTML = managedUsers.map(u => {
+    const active = u.Is_Active === true || String(u.Is_Active).toUpperCase() === "TRUE";
+    return '<tr>' +
+      '<td>' + escapeHtml(u.User_Name) + '</td>' +
+      '<td>' + escapeHtml(u.User_Email) + '</td>' +
+      '<td>' + escapeHtml(u.User_Role) + '</td>' +
+      '<td><span class="user-status ' + (active ? '' : 'inactive') + '">' + (active ? userText("ACTIVE","AKTIF") : userText("INACTIVE","TIDAK AKTIF")) + '</span></td>' +
+      '<td>' + escapeHtml(formatUserDate(u.Last_Login_At)) + '</td>' +
+      '<td><button type="button" class="user-row-action" data-edit-user="' + escapeHtml(u.User_ID) + '">' + userText("Edit","Ubah") + '</button></td>' +
+      '</tr>';
+  }).join("");
+}
+
+async function loadManagedUsers() {
+  if (!currentUser || currentUser.role !== "SUPER_ADMIN") {
+    showUsersResult(userText("Access denied. SUPER_ADMIN only.", "Akses ditolak. SUPER_ADMIN sahaja."), "error");
+    return;
+  }
+  showUsersResult(userText("Loading user accounts...", "Sedang memuatkan akaun pengguna..."), "success");
+  document.getElementById("refreshUsersButton").disabled = true;
+  try {
+    const result = await requestUsersApi("USERS_LIST");
+    managedUsers = Array.isArray(result.users) ? result.users : [];
+    renderManagedUsers();
+    document.getElementById("usersResult").className = "settings-result";
+  } catch (error) {
+    console.error("Load users error:", error);
+    showUsersResult(userText("Unable to load users: ", "Tidak dapat memuatkan pengguna: ") + error.message, "error");
+  } finally { document.getElementById("refreshUsersButton").disabled = false; }
+}
+
+function openUserEditor(user) {
+  const editing = !!user;
+  document.getElementById("userEditorPanel").style.display = "block";
+  document.getElementById("userEditorTitle").textContent = editing ? userText("Edit User", "Ubah Pengguna") : userText("Add User", "Tambah Pengguna");
+  document.getElementById("userEditorSubtitle").textContent = editing ? userText("Update this account's role or status.", "Kemas kini peranan atau status akaun ini.") : userText("Create an authorized portal account.", "Daftarkan akaun yang dibenarkan untuk portal.");
+  document.getElementById("managedUserId").value = editing ? user.User_ID : "";
+  document.getElementById("managedUserName").value = editing ? user.User_Name : "";
+  document.getElementById("managedUserEmail").value = editing ? user.User_Email : "";
+  document.getElementById("managedUserEmail").disabled = editing;
+  document.getElementById("managedUserRole").value = editing ? user.User_Role : "CONTENT_ADMIN";
+  const active = editing ? (user.Is_Active === true || String(user.Is_Active).toUpperCase() === "TRUE") : true;
+  document.getElementById("managedUserActive").value = String(active);
+  document.getElementById("userEditorPanel").scrollIntoView({behavior:"smooth", block:"start"});
+}
+
+function closeUserEditor() {
+  document.getElementById("userEditorForm").reset();
+  document.getElementById("managedUserId").value = "";
+  document.getElementById("managedUserEmail").disabled = false;
+  document.getElementById("userEditorPanel").style.display = "none";
+}
+
+async function saveManagedUser(event) {
+  event.preventDefault();
+  if (!currentUser || currentUser.role !== "SUPER_ADMIN") { showUsersResult(userText("Access denied.", "Akses ditolak."), "error"); return; }
+  const userId = document.getElementById("managedUserId").value;
+  const user = {
+    name: document.getElementById("managedUserName").value.trim(),
+    role: document.getElementById("managedUserRole").value,
+    active: document.getElementById("managedUserActive").value === "true"
+  };
+  const action = userId ? "USERS_UPDATE" : "USERS_CREATE";
+  if (userId) user.userId = userId;
+  else user.email = document.getElementById("managedUserEmail").value.trim();
+  const button = document.getElementById("saveManagedUser");
+  button.disabled = true;
+  button.textContent = userText("Saving...", "Menyimpan...");
+  try {
+    await requestUsersApi(action, user);
+    closeUserEditor();
+    showUsersResult(userText("User account saved successfully.", "Akaun pengguna berjaya disimpan."), "success");
+    await loadManagedUsers();
+    showUsersResult(userText("User account saved successfully.", "Akaun pengguna berjaya disimpan."), "success");
+  } catch (error) {
+    console.error("Save user error:", error);
+    showUsersResult(userText("Unable to save user: ", "Tidak dapat menyimpan pengguna: ") + error.message, "error");
+  } finally { button.disabled = false; button.textContent = userText("Save User", "Simpan Pengguna"); }
+}
+
+document.getElementById("newUserButton").addEventListener("click", () => openUserEditor(null));
+document.getElementById("refreshUsersButton").addEventListener("click", loadManagedUsers);
+document.getElementById("cancelUserEdit").addEventListener("click", closeUserEditor);
+document.getElementById("userEditorForm").addEventListener("submit", saveManagedUser);
+document.getElementById("usersTableBody").addEventListener("click", event => {
+  const button = event.target.closest("[data-edit-user]");
+  if (!button) return;
+  const user = managedUsers.find(item => String(item.User_ID) === button.dataset.editUser);
+  if (user) openUserEditor(user);
+});
+
+function showUsersPage() {
+  document.getElementById("dashboardWelcome").classList.add("hidden");
+  document.getElementById("dashboardStats").classList.add("hidden");
+  document.getElementById("dashboardPanels").classList.add("hidden");
+  document.getElementById("dashboardMosqueInformation").classList.add("hidden");
+  document.getElementById("lastUpdated").classList.add("hidden");
+  document.getElementById("mosqueSettingsView").classList.remove("active");
+  document.getElementById("usersManagementView").classList.add("active");
+  document.getElementById("pageMessage").style.display = "none";
+  document.querySelector(".top-title").textContent = userText("Users & Roles", "Pengguna & Peranan");
+  closeUserEditor();
+  loadManagedUsers();
+}
+
 function showDashboardPage() {
+  document.getElementById("usersManagementView").classList.remove("active");
   document.getElementById("mosqueSettingsView").classList.remove("active");
   document.getElementById("dashboardWelcome").classList.remove("hidden");
   document.getElementById("dashboardStats").classList.remove("hidden");
@@ -1960,6 +2175,7 @@ function showDashboardPage() {
 }
 
 function showSettingsPage() {
+  document.getElementById("usersManagementView").classList.remove("active");
   document.getElementById("dashboardWelcome").classList.add("hidden");
   document.getElementById("dashboardStats").classList.add("hidden");
   document.getElementById("dashboardPanels").classList.add("hidden");
@@ -2021,6 +2237,11 @@ document.querySelectorAll(".nav-item").forEach(button => {
 
     if (page === "mosque_settings") {
       showSettingsPage();
+      return;
+    }
+
+    if (page === "users_roles") {
+      showUsersPage();
       return;
     }
 
